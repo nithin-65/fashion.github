@@ -1,0 +1,748 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nithin's Fashion Portfolio</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script type="text/javascript">
+    var gk_isXlsx = false;
+    var gk_xlsxFileLookup = {};
+    var gk_fileData = {};
+    function filledCell(cell) {
+      return cell !== '' && cell != null;
+    }
+    function loadFileData(filename) {
+      if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+        try {
+          var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+          var firstSheetName = workbook.SheetNames[0];
+          var worksheet = workbook.Sheets[firstSheetName];
+          var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+          var filteredData = jsonData.filter(row => row.some(filledCell));
+          var headerRowIndex = filteredData.findIndex((row, index) =>
+            row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+          );
+          if (headerRowIndex === -1 || headerRowIndex > 25) {
+            headerRowIndex = 0;
+          }
+          var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex));
+          csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+          return csv;
+        } catch (e) {
+          console.error(e);
+          return "";
+        }
+      }
+      return gk_fileData[filename] || "";
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+    .lightbox .close, .lightbox .prev, .lightbox .next {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #eab308;
+      font-size: 2rem;
+      cursor: pointer;
+      padding: 10px;
+    }
+    .lightbox .close {
+      top: 20px;
+      right: 20px;
+      transform: none;
+    }
+    .lightbox .prev {
+      left: 20px;
+    }
+    .lightbox .next {
+      right: 20px;
+    }
+    .section {
+      scroll-margin-top: 80px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .text-container {
+      position: relative;
+      height: auto;
+      min-height: 6rem;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid rgba(234, 179, 8, 0.3);
+      overflow: hidden;
+      word-wrap: break-word;
+    }
+    .description-text {
+      width: 100%;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    .description-text.original {
+     position: absolute;
+      opacity: 1;
+      visibility: hidden;
+      z-index: 1;
+    }
+    .description-text.rephrased {
+      position: relative;
+      opacity: 1;
+      visibility: visible;
+      z-index: 1;
+    }
+    .text-container:hover .description-text.original {
+      opacity: 1;
+      visibility: visible;
+    }
+    .text-container:hover .description-text.rephrased {
+      opacity: 0;
+      visibility: hidden;
+    }
+    /* Hero Animations */
+    .float-text {
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 10px rgba(236, 72, 153, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(236, 72, 153, 1); }
+    }
+    /* About Animations */
+    .zoom-in {
+      opacity: 0;
+      transform: scale(0.8);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+    .zoom-in.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+    .typewriter {
+      display: inline-block;
+      overflow: hidden;
+      white-space: nowrap;
+      border-right: 2px solid #eab308;
+      animation: typing 3s steps(40, end) forwards, blink 0.5s step-end infinite;
+    }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+    @keyframes blink {
+      50% { border-color: transparent; }
+    }
+    /* Portfolio Animations */
+    .gallery-item {
+      position: relative;
+      perspective: 1000px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .gallery-item.visible {
+      opacity: 1;
+      transform: translateY(0);
+      animation: bounce 0.5s ease;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    .gallery-inner {
+      position: relative;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      width: 100%;
+      aspect-ratio: 2/3;
+      min-height: 400px;
+      max-height: 600px;
+    }
+    .gallery-item:hover .gallery-inner {
+      transform: rotateY(180deg);
+    }
+    .gallery-front, .gallery-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+    }
+    .gallery-front {
+      z-index: 2;
+      border: #eab308;
+    }
+    .gallery-front img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .gallery-back {
+      transform: rotateY(180deg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.8);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    /* Contact Animations */
+    .slide-in {
+      opacity: 0;
+      transform: translateX(-50px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .slide-in.visible:nth-child(1) {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.1s;
+    }
+    .slide-in.visible:nth-child(2) {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.2s;
+    }
+    .slide-in.visible:nth-child(3) {
+      opacity: 1;
+      transform: translateX(0);
+      transition-delay: 0.3s;
+    }
+    .ripple-effect {
+      position: relative;
+      overflow: hidden;
+    }
+    .ripple-effect:hover::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(163, 230, 53, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: ripple 0.6s ease-out;
+    }
+    @keyframes ripple {
+      0% { width: 0; height: 0; opacity: 1; }
+      100% { width: 200px; height: 200px; opacity: 0; }
+    }
+    /* Parallax Background */
+    .parallax-bg {
+      background-attachment: fixed;
+      background-position: center;
+      background-size: cover;
+    }
+    .bg-gradient-dark-light {
+      background: linear-gradient(135deg, #0c0a09 0%, #2e1065 100%);
+    }
+  </style>
+</head>
+<body class="bg-pink-300 font-sans">
+  <nav class="bg-gradient-dark-light shadow fixed w-full z-10">
+    <div class="container mx-auto px-4 py-4 flex justify-center space-x-6">
+      <a href="#home" class="text-pink-100 hover:text-green-400 font-semibold">Home</a>
+      <a href="#about" class="text-pink-100 hover:text-green-400 font-semibold">About</a>
+      <a href="#portfolio" class="text-pink-100 hover:text-green-400 font-semibold">Portfolio</a>
+      <a href="#contact" class="text-pink-100 hover:text-green-400 font-semibold">Contact</a>
+    </div>
+  </nav>
+
+  <section id="home" class="section min-h-screen flex items-center justify-center bg-gradient-dark-light parallax-bg">
+    <div class="text-center text-pink-100 bg-black bg-opacity-70 p-8 rounded-lg">
+      <h1 class="text-4xl md:text-6xl font-bold mb-4 font-serif float-text">I'm Nithin Micheal</h1>
+      <p class="text-xl md:text-2xl mb-6 font-light float-text">Fashion Blogger & Style Visionary</p>
+      <div class="text-container max-w-2xl mx-auto mb-8">
+        <p class="description-text original text-pink-100">I’ll rock whatever the hell I feel like—sloppy, cozy, unfiltered. Style’s not about chasing perfection; it’s about caring zero shits and still owning the room.</p>
+        <p class="description-text rephrased text-pink-100">"Dive into my world of bold trends, timeless elegance, and sustainable fashion. Discover outfits that inspire and redefine style."</p>
+      </div>
+      <a href="#portfolio" class="bg-fuchsia-500 text-white px-6 py-3 rounded-full hover:bg-fuchsia-600 transition pulse-glow">Explore My Style</a>
+    </div>
+  </section>
+
+  <section id="about" class="section py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-8 text-pink-600 font-serif">About Nithin Micheal</h2>
+      <div class="flex flex-col md:flex-row items-center">
+        <img src="images/image31.jpeg" alt="Jane Doe" class="w-64 h-64 rounded-full mb-6 md:mb-0 md:mr-8 object-cover border-4 border-eab308 zoom-in">
+        <div>
+          <div class="text-container mb-4">
+            <p class="description-text original text-gray-800">"I’m Nithin Micheal. I don’t design to impress—I create because I’m bored of the bullshit. Style isn’t deep, it’s just instinct with fewer colors."</p>
+            <p class="description-text rephrased text-gray-800 typewriter">I’m Nithin Micheal, a fashion designer with a flair for creating distinctive looks. My background in design drives my creative and forward-thinking style.</p>
+          </div>
+          <div class="text-container mb-4">
+            <p class="description-text original text-gray-800">My blog covers ‘all the styles’—translation: I wear random crap, take moody photos, and call it inspiration. You’re not finding yourself here, you’re getting lost with me.</p>
+            <p class="description-text rephrased text-gray-800 typewriter">My blog explores a wide range of styles, from edgy streetwear to sophisticated couture, inspiring you to express your individuality through fashion.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="portfolio" class="section py-16 bg-gradient-dark-light parallax-bg">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-8 text-pink-100 font-serif">Portfolio</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image19.jpeg" alt="Look 1" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">In a world of poses, being real is rebellion.</p>
+                <p class="description-text rephrased text-pink-100">Grace isn't just in the outfit — it's in the heart that wears it.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image20.jpeg" alt="Look 2" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Smiling for the world, escaping from yourself.
+                <p class="description-text rephrased text-pink-100">When your vibe is right, even the street becomes a stage.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image10.jpg" alt="Look 3" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Purpose burns within — calm outside, fire inside.</p>
+                <p class="description-text rephrased text-pink-100">Peace looks good on him — like a man who's already enough.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image4.jpg" alt="Look 4" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Not lost in thought,just loading the next big move</p>
+                <p class="description-text rephrased text-pink-100">In a world full of noise, he found strength in silence.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image15.jpg" alt="Look 5" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Every move is a message, every beat a decision.</p>
+                <p class="description-text rephrased text-pink-100">When the rhythm takes over,the soul finally speaks.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image5.jpg" alt="Look 6" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">The path ahead isn’t waiting — I walk it with purpose, not pause.</p>
+                <p class="description-text rephrased text-pink-100">In stillness, I find clarity — every step forward begins within.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image3.jpg" alt="Look 7" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Rooted in calm.</p>
+                <p class="description-text rephrased text-pink-100">Nostalgic style with a vintage touch.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image13.jpg" alt="Look 8" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Eyes forward. Goals locked.”</p>
+                <p class="description-text rephrased text-pink-100">Sleek style with simple elegance.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image21.jpeg" alt="Look 9" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Built for beyond.</p>
+                <p class="description-text rephrased text-pink-100">No need to prove. Just be..</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image9.jpg" alt="Look 10" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Let the light find you.</p>
+                <p class="description-text rephrased text-pink-100">Sunny look with lively hues.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image6.jpeg" alt="Look 11" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">The sky isn’t the limit, it’s just the beginning.</p>
+                <p class="description-text rephrased text-pink-100">In the midst of celebration, remember how far you've come</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image12.jpg" alt="Look 12" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Calm speaks louder.</p>
+                <p class="description-text rephrased text-pink-100">Peace looks good on you.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image28 (1).jpeg" alt="Look 13" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Blend with the moment.</p>
+                <p class="description-text rephrased text-pink-100">Own the horizon.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image25 (1).jpeg" alt="Look 14" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Built to conquer..</p>
+                <p class="description-text rephrased text-pink-100">Even the wild slows down to breathe..</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image29.jpeg" alt="Look 15" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Ride with fire.</p>
+                <p class="description-text rephrased text-pink-100">Parked in peace, powered by joy.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image34.jpeg" alt="Look 16" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Beach-ready outfit with breezy vibes.</p>
+                <p class="description-text rephrased text-pink-100">Coastal style with relaxed charm.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image33 (2).jpeg" alt="Look 17" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Less flash, more substance.</p>
+                <p class="description-text rephrased text-pink-100">Humble roots, strong soul.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image26.jpeg" alt="Look 18" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Modern outfit with cutting-edge style.</p>
+                <p class="description-text rephrased text-pink-100">Contemporary look with bold trends.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image22.jpeg" alt="Look 19" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Experimental avant-garde couture with daring shapes.</p>
+                <p class="description-text rephrased text-pink-100">Innovative couture with striking silhouettes.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image24.jpeg" alt="Look 20" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Neon streetwear with electrifying colors.</p>
+                <p class="description-text rephrased text-pink-100">Vibrant streetwear with bold neon tones.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image7.jpg" alt="Look 21" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Sustainable chic with eco-friendly materials.</p>
+                <p class="description-text rephrased text-pink-100">Eco-conscious style with a modern edge.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image8.jpg" alt="Look 22" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Gothic elegance with dark romantic vibes.</p>
+                <p class="description-text rephrased text-pink-100">Romantic gothic style with a dark flair.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image32.jpeg" alt="Look 23" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Metallic glam with futuristic shine.</p>
+                <p class="description-text rephrased text-pink-100">Futuristic glamour with metallic brilliance.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-item">
+          <div class="gallery-inner">
+            <div class="gallery-front">
+              <img src="images/image35.jpeg" alt="Look 24" onerror="this.src='https://via.placeholder.com/400x600?text=Image+Not+Found'" class="cursor-pointer">
+            </div>
+            <div class="gallery-back">
+              <div class="text-container mt-2 text-center">
+                <p class="description-text original text-pink-100">Pastel dream with soft, dreamy hues.</p>
+                <p class="description-text rephrased text-pink-100">Ethereal style with delicate pastel tones.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="lightbox" id="lightbox">
+    <span class="close" onclick="closeLightbox()">×</span>
+    <span class="prev" onclick="changeImage(-1)">❮</span>
+    <img id="lightbox-img" src="" alt="Selected Look">
+    <span class="next" onclick="changeImage(1)">❯</span>
+  </div>
+
+  <section id="contact" class="section py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-center mb-8 text-pink-600 font-serif">Get in Touch</h2>
+      <div class="max-w-lg mx-auto text-center">
+        <div class="text-container mb-4 slide-in">
+          <p class="description-text original text-gray-800">Email: <a href="nithinmicheal66@gmail.com" class="text-fuchsia-500 hover:text-green-400 ripple-effect">nithinmicheal66@gmail.com</a></p>
+          <p class="description-text rephrased text-gray-800">Email: <a href="michealbhai97@gmail.com" class="text-fuchsia-500 hover:text-green-400 ripple-effect">michealbhai97@gmail.com</a></p>
+        <div class="text-container mb-4 slide-in">
+          <p class="description-text original text-gray-800">Instagram: <a href="https://www.instagram.com/nithin__micheal_00?igsh=cTIydWthdThvMHc2&utm_source=ig_contact_invite" class="text-fuchsia-500 hover:text-green-400 ripple-effect">instagram.com/nithin__micheal_00</a></p>
+          <p class="description-text rephrased text-gray-800">Instagram: <a href="https://www.instagram.com/nithin__micheal_00?igsh=cTIydWthdThvMHc2&utm_source=ig_contact_invite" class="text-fuchsia-500 hover:text-green-400 ripple-effect">instagram.com/nithin__official06</a></p>
+        </div>
+        <div class="text-container mb-4 slide-in">
+          <p class="description-text original text-gray-800">Pinterest: <a href="https://pin.it/52IpvuaIE" class="text-fuchsia-500 hover:text-green-400 ripple-effect">pinterest.com/nithin</a></p>
+          <p class="description-text rephrased text-gray-800">Pinterest: <a href="https://pin.it/52IpvuaIE" class="text-fuchsia-500 hover:text-green-400 ripple-effect">pinterest.com/micheal</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-gradient-dark-light text-pink-100 py-4 text-center">
+    <p>© 2025 Jane Doe. All rights reserved.</p>
+  </footer>
+
+  <script>
+    const images = document.querySelectorAll('.gallery-item img');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    let currentIndex = 0;
+
+    images.forEach((img, index) => {
+      img.addEventListener('click', () => {
+        lightbox.style.display = 'flex';
+        lightboxImg.src = img.src;
+        currentIndex = index;
+      });
+    });
+
+    function closeLightbox() {
+      lightbox.style.display = 'none';
+    }
+
+    function changeImage(direction) {
+      currentIndex = (currentIndex + direction + images.length) % images.length;
+      lightboxImg.src = images[currentIndex].src;
+    }
+
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+
+    const sections = document.querySelectorAll('.section');
+    const galleryItems = document.querySelectorAll('.gallery-item');
+    const slideInElements = document.querySelectorAll('.slide-in');
+    const zoomInElements = document.querySelectorAll('.zoom-in');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    sections.forEach(section => observer.observe(section));
+    galleryItems.forEach(item => observer.observe(item));
+    slideInElements.forEach(item => observer.observe(item));
+    zoomInElements.forEach(item => observer.observe(item));
+  </script>
+</body>
+</html>
